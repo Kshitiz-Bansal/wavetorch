@@ -22,7 +22,7 @@ import librosa.display
 COL_TRAIN = "#1f77b4"
 COL_TEST  = "#2ca02c"
 
-parser = argparse.ArgumentParser() 
+parser = argparse.ArgumentParser()
 parser.add_argument('command', type=str)
 parser.add_argument('filename', type=str)
 parser.add_argument('--times', nargs='+', type=int, default=None)
@@ -66,7 +66,7 @@ class WaveTorch(object):
 
         # fig, axs = plt.subplots(N_classes, 1, constrained_layout=True, figsize=(4, 3), sharex=True, sharey=True)
         fig, axs = plt.subplots(N_classes, len(args.times), constrained_layout=True, figsize=(6.5, 6.5), sharex=True, sharey=True)
-        fig2, axs2 = plt.subplots(3, 2, constrained_layout=True, figsize=(3.7, 2))
+        # fig2, axs2 = plt.subplots(3, 2, constrained_layout=True, figsize=(3.7, 2))
         for i in range(N_classes):
             xb, yb = wavetorch.data.select_vowel_sample(X, Y, F, i, ind=args.vowel_samples[i] if args.vowel_samples is not None else None)
             with torch.no_grad():
@@ -80,6 +80,62 @@ class WaveTorch(object):
         if args.labels:
             wavetorch.plot.apply_sublabels(axs.ravel(), xy=[(5,-5)], size='medium', weight='bold', ha='left', va='top')
         plt.show()
+
+
+
+    def c_values(self, args):
+        model, history, history_state, cfg = wavetorch.io.load_model(args.filename)
+        data = torch.load(args.filename)
+
+        sr = cfg['data']['sr']
+        gender = cfg['data']['gender']
+        vowels = cfg['data']['vowels']
+        N_classes = len(vowels)
+
+        X, Y, F = wavetorch.data.load_all_vowels(vowels, gender='both', sr=sr, normalize=True, random_state=0)
+        xb, yb = wavetorch.data.select_vowel_sample(X, Y, F, 1, ind=args.vowel_samples[i] if args.vowel_samples is not None else None)
+
+        with torch.no_grad():
+            # print
+            for i, state in enumerate(history_state):
+                new_geom = wavetorch.io.new_geometry(data['model_geom_class_str'], state)
+                model.cell.geom = new_geom
+                c_data = model.cell.geom.c.detach().numpy().transpose()
+                print(c_data.shape)
+                file_name_csv = "c_data/csv/epoch#{}.csv".format(i)
+                file_name_txt = "c_data/txt/epoch#{}.txt".format(i)
+                np.savetxt(file_name_csv, c_data, fmt='%5.4f', delimiter=',', newline='\n')
+                np.savetxt(file_name_txt, c_data, fmt='%5.4f', delimiter=',', newline='\n')
+
+                # to print -->
+
+                # print("Epoch  #{}".format(i))
+                # for row in c_data:
+                #     for val in row:
+                #         print('{}'.format(val), end=" ")
+                #     print()
+                #
+                # print()
+                # print()
+
+
+    def c_heatmap(self, args):
+        model, history, history_state, cfg = wavetorch.io.load_model(args.filename)
+        data = torch.load(args.filename)
+
+        sr = cfg['data']['sr']
+        gender = cfg['data']['gender']
+        vowels = cfg['data']['vowels']
+        N_classes = len(vowels)
+
+        X, Y, F = wavetorch.data.load_all_vowels(vowels, gender='both', sr=sr, normalize=True, random_state=0)
+        xb, yb = wavetorch.data.select_vowel_sample(X, Y, F, 1, ind=args.vowel_samples[i] if args.vowel_samples is not None else None)
+        with torch.no_grad():
+
+            wavetorch.plot.geometry_evolution(model, data['model_geom_class_str'], history_state, quantity='c', figsize=(5.6, 1.5))
+
+        plt.show()
+
 
     # def stft(self, args):
     #     model, history, history_state, cfg = wavetorch.utils.load_model(args.filename)
@@ -125,7 +181,7 @@ class WaveTorch(object):
 
     #             for k in range(1, probe_series.shape[1]+1):
     #                 ax = axs[j, k]
-                    
+
     #                 output_stft = np.abs(librosa.stft(probe_series[:,k-1].numpy(), n_fft=256))
 
     #                 librosa.display.specshow(
@@ -144,7 +200,7 @@ class WaveTorch(object):
     #                     ax.set_title("Output probe %d" % (k))
     #                 if k == 1:
     #                     ax.text(-0.3, 0.5, vowels[j] + ' vowel', transform=ax.transAxes, ha="right", va="center")
-                    
+
     #                 if k > 0:
     #                     ax.set_ylabel('')
     #                 if j < N_classes-1:
@@ -155,6 +211,7 @@ class WaveTorch(object):
 
     def animate(self, args):
         model, history, history_state, cfg = wavetorch.utils.load_model(args.filename)
+        # model, history, history_state, cfg = wavetorch.io.load_model(args.filename) // kshitiz
 
         print("Configuration for model in %s is:" % args.filename)
         print(yaml.dump(cfg, default_flow_style=False))

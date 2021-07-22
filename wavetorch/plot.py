@@ -179,7 +179,12 @@ def geometry_evolution(model, model_geom_class_str, history_geom_state, quantity
 		axs[j].axis('image')
 		axs[j].axis('off')
 
-	plt.colorbar(h, ax=axs, shrink=0.5, label='Wave speed', ticks=np.array([model.c0.item(), model.c1.item()]))
+	# plt.colorbar(h, ax=axs, shrink=0.5, label='Wave speed', ticks=np.array([model.c0.item(), model.c1.item()])) # bug found
+#
+#             BUG REPORT
+#   	model.c0 --> model.cell.geom.c0
+#		model.c1 --> model.cell.geom.c1
+	plt.colorbar(h, ax=axs, shrink=0.5, label='Wave speed', ticks=np.array([model.cell.geom.c0.item(), model.cell.geom.c1.item()])) # bug here
 
 
 def probe_integrals(model, fields_in, ylabel, x, block=False, ax=None):
